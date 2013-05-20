@@ -97,11 +97,11 @@ int main() {
                 float dev = 1 - min / max;
 
                 if (prevz > currz) {
-                    if (dev > THRESHOLDUP) {
+                    if (dev > THRESHOLDUP || abs(out->x) > DOWNANGLE || abs(out->y) > DOWNANGLE) {
                         macSleepAwake(SLEEP);
                     }
                 } else {
-                    if (dev > THRESHOLDDOWN && (abs(out->x) <= DOWNANGLE || abs(out->y) <= DOWNANGLE)) {
+                    if (dev > THRESHOLDDOWN || (abs(out->x) <= DOWNANGLE || abs(out->y) <= DOWNANGLE)) {
                         macSleepAwake(AWAKE);
                     }
                 }
