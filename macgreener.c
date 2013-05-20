@@ -5,10 +5,10 @@ IFS=: GCC=$(for dir in $PATH; do
 done | sort -rn | head -1)
 [ -z "$GCC" ] && GCC=gcc
 
-sed '1,12d' "$0" | $GCC -framework CoreFoundation -framework IOKit -o macgreener -xc -
-strip macgreener
-/bin/cp -f macgreener /usr/local/bin
-exit 0
+sed '1,12d' "$0" | $GCC -framework CoreFoundation -framework IOKit -o macgreener -O3 -xc -std=c99 -
+error=$?
+[ $error -eq 0 ] && strip macgreener && /bin/cp -f macgreener /usr/local/bin
+exit $error
 */
 #include <IOKit/IOKitLib.h>
 #include <CoreFoundation/CoreFoundation.h>
@@ -17,7 +17,6 @@ exit 0
 #include <string.h>
 #include <unistd.h>
 #include <stdbool.h>
-#include <sys/param.h>
 
 #define EXITONFAIL(code) do { if (errcode != KERN_SUCCESS) {\
     fprintf(stderr, "Error code: 0x%X\n", GETCODE(errcode));\
@@ -28,9 +27,8 @@ exit 0
 #define SLEEP true
 #define AWAKE false
 
-#define THRESHOLDUP 0.2
-#define THRESHOLDDOWN 0.2
-#define DOWNANGLE 20
+#define THRESHOLD 10
+#define ANGLE 10
 
 typedef struct {
     int16_t x;
@@ -90,30 +88,24 @@ int main() {
     memset(out, 0, osize);
     memset(in, 1, isize);
 
-    int16_t prevz;
-    float dev;
-    bool inited = false;
+    int16_t prevz, currz, diffz;
+    bool inited = false, sleeping = false;
 
     for(;;) {
         errcode = IOConnectCallStructMethod(connect, 5, in, osize, out, &isize);
         EXITONFAIL(-5);
 
-        int16_t currz = out->z;
+        currz = out->z;
 
         if (inited) {
-            float min = MIN(prevz, currz);
-            float max = MAX(prevz, currz);
-
-            if (max) {
-                float dev = 1 - min / max;
-
+            if (abs(currz - prevz) > THRESHOLD) {
                 if (prevz > currz) {
-                    if (dev > THRESHOLDUP || abs(out->x) > DOWNANGLE || abs(out->y) > DOWNANGLE) {
-                        macSleepAwake(SLEEP);
-                    }
-                } else {
-                    if (dev > THRESHOLDDOWN) {
+                    macSleepAwake(SLEEP);
+                    sleeping = true;
+                } else if (sleeping) {
+                    if (abs(out->x) < ANGLE && abs(out->y) < ANGLE) {
                         macSleepAwake(AWAKE);
+                        sleeping = false;
                     }
                 }
             }
