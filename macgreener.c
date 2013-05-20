@@ -1,7 +1,14 @@
 #!/bin/bash
-# Evgeny Stepanischev May 2013
-sed '1,3d' "$0" | gcc -framework CoreFoundation -framework IOKit -o macgreener -xc - ; exit 0
+#Evgeny Stepanischev May 2013 /*
+IFS=: GCC=$(for dir in $PATH; do
+    ls -1 $dir 2>&- | grep -Eo 'gcc-\d+.\d+'
+done | sort -rn | head -1)
+[ -z "$GCC" ] && GCC=gcc
 
+sed '1,11d' "$0" | $GCC -framework CoreFoundation -framework IOKit -o macgreener -xc -
+strip macgreener
+exit 0
+*/
 #include <IOKit/IOKitLib.h>
 #include <CoreFoundation/CoreFoundation.h>
 #include <stdio.h>
