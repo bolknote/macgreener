@@ -5,8 +5,9 @@ IFS=: GCC=$(for dir in $PATH; do
 done | sort -rn | head -1)
 [ -z "$GCC" ] && GCC=gcc
 
-sed '1,11d' "$0" | $GCC -framework CoreFoundation -framework IOKit -o macgreener -xc -
+sed '1,12d' "$0" | $GCC -framework CoreFoundation -framework IOKit -o macgreener -xc -
 strip macgreener
+/bin/cp -f macgreener /usr/local/bin
 exit 0
 */
 #include <IOKit/IOKitLib.h>
@@ -111,7 +112,7 @@ int main() {
                         macSleepAwake(SLEEP);
                     }
                 } else {
-                    if (dev > THRESHOLDDOWN || (abs(out->x) <= DOWNANGLE || abs(out->y) <= DOWNANGLE)) {
+                    if (dev > THRESHOLDDOWN) {
                         macSleepAwake(AWAKE);
                     }
                 }
