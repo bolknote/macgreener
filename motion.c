@@ -14,8 +14,12 @@
 } } while (0)
 
 #define GETCODE(err) ((err)&0x3fff)
+#define SLEEP true
+#define AWAKE false
 
-#define THRESHOLD 0.2
+#define THRESHOLDUP 0.2
+#define THRESHOLDDOWN 0.2
+#define DOWNANGLE 20
 
 typedef struct {
     int16_t x;
@@ -23,14 +27,14 @@ typedef struct {
     int16_t z;
 } ostruct;
 
-void macSleep() {
+void macSleepAwake(bool sleep) {
     io_registry_entry_t r = IORegistryEntryFromPath(
         kIOMasterPortDefault,
         "IOService:/IOResources/IODisplayWrangler"
     );
 
     if (r) {
-        IORegistryEntrySetCFProperty(r, CFSTR("IORequestIdle"), kCFBooleanTrue);
+        IORegistryEntrySetCFProperty(r, CFSTR("IORequestIdle"), sleep ? kCFBooleanTrue : kCFBooleanFalse);
         IOObjectRelease(r);
     }
 }
@@ -83,7 +87,7 @@ int main() {
         errcode = IOConnectCallStructMethod(connect, 5, in, osize, out, &isize);
         EXITONFAIL(-5);
 
-        int16_t currz = (*out).z;
+        int16_t currz = out->z;
 
         if (inited) {
             float min = MIN(prevz, currz);
@@ -92,8 +96,14 @@ int main() {
             if (max) {
                 float dev = 1 - min / max;
 
-                if (dev > THRESHOLD) {
-                    macSleep();
+                if (prevz > currz) {
+                    if (dev > THRESHOLDUP) {
+                        macSleepAwake(SLEEP);
+                    }
+                } else {
+                    if (dev > THRESHOLDDOWN && (abs(out->x) <= DOWNANGLE || abs(out->y) <= DOWNANGLE)) {
+                        macSleepAwake(AWAKE);
+                    }
                 }
             }
         } else {
