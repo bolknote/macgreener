@@ -1,4 +1,7 @@
-// //#cgo  darwin LDFLAGS: -L/usr/local/lib -framework Cocoa -framework OpenGL -framework IOKit -lglfw
+#!/bin/bash
+# Evgeny Stepanischev May 2013
+sed '1,3d' "$0" | gcc -framework CoreFoundation -framework IOKit -o macgreener -xc - ; exit 0
+
 #include <IOKit/IOKitLib.h>
 #include <CoreFoundation/CoreFoundation.h>
 #include <stdio.h>
