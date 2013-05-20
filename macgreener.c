@@ -99,7 +99,7 @@ int main() {
 
         if (inited) {
             if (abs(currz - prevz) > THRESHOLD) {
-                if (prevz > currz) {
+                if (prevz > currz && !sleeping && abs(out->x) >= ANGLE) {
                     macSleepAwake(SLEEP);
                     sleeping = true;
                 } else if (sleeping) {
